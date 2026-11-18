@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Game {
+  id                Int     @id
+  name              String
+  releaseYear       Int
+  genre             String?
+  generation        Int?
+  releaseStatus     String  @default("Released")
+  maleProtagonist   String?
+  femaleProtagonist String?
+  mainVillain       String?
+
+  developerId Int?
+  developer   Developer? @relation(fields: [developerId], references: [id])
+
+  platforms        Platform[]
+  starters         GameStarter[]
+  gameTrainers     GameTrainer[]
+  gameProfessors   GameProfessor[]
+  gameProtagonists GameProtagonist[]
+
+  gameAntagonists   GameAntagonist[]
+  gameOrganizations GameOrganization[]
+}
+
+model Developer {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  games Game[]
+}
+
+model Platform {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  games Game[]
+}
+
+model Pokemon {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  primaryType   String
+  secondaryType String?
+  gameStarters  GameStarter[]
+}
+
+model GameStarter {
+  gameId    Int
+  pokemonId Int
+
+  game    Game    @relation(fields: [gameId], references: [id])
+  pokemon Pokemon @relation(fields: [pokemonId], references: [id])
+
+  @@id([gameId, pokemonId])
+}
+
+model City {
+  id     Int    @id @default(autoincrement())
+  name   String
+  region String
+
+  trainersFromHere      Trainer[]   @relation("TrainerHometown")
+  trainersCurrentlyHere Trainer[]   @relation("TrainerCurrentCity")
+  professors            Professor[]
+
+  @@unique([name, region])
+}
+
+model Trainer {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  hometownCityId Int?
+  hometown       City? @relation("TrainerHometown", fields: [hometownCityId], references: [id])
+
+  currentCityId Int?
+  currentCity   City? @relation("TrainerCurrentCity", fields: [currentCityId], references: [id])
+
+  games GameTrainer[]
+
+  protagonistIn GameProtagonist[]
+}
+
+model GameTrainer {
+  gameId    Int
+  trainerId Int
+
+  game    Game    @relation(fields: [gameId], references: [id])
+  trainer Trainer @relation(fields: [trainerId], references: [id])
+
+  @@id([gameId, trainerId])
+}
+
+model Professor {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  labCityId Int
+  labCity   City @relation(fields: [labCityId], references: [id])
+
+  games GameProfessor[]
+}
+
+model GameProfessor {
+  gameId      Int
+  professorId Int
+
+  game      Game      @relation(fields: [gameId], references: [id])
+  professor Professor @relation(fields: [professorId], references: [id])
+
+  @@id([gameId, professorId])
+}
+
+model GameProtagonist {
+  gameId    Int
+  trainerId Int
+
+  game    Game    @relation(fields: [gameId], references: [id])
+  trainer Trainer @relation(fields: [trainerId], references: [id])
+
+  @@id([gameId, trainerId])
+}
+
+model Antagonist {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  motive      String?
+
+  gameAppearances         GameAntagonist[]
+  organizationMemberships AntagonistOrganization[]
+}
+
+model VillainousOrganization {
+  id   Int     @id @default(autoincrement())
+  name String  @unique
+  goal String?
+
+  gameAppearances GameOrganization[]
+  members         AntagonistOrganization[]
+}
+
+model GameAntagonist {
+  gameId       Int
+  antagonistId Int
+  role         String?
+
+  game       Game       @relation(fields: [gameId], references: [id])
+  antagonist Antagonist @relation(fields: [antagonistId], references: [id])
+
+  @@id([gameId, antagonistId])
+}
+
+model GameOrganization {
+  gameId         Int
+  organizationId Int
+  role           String?
+
+  game         Game                   @relation(fields: [gameId], references: [id])
+  organization VillainousOrganization @relation(fields: [organizationId], references: [id])
+
+  @@id([gameId, organizationId])
+}
+
+model AntagonistOrganization {
+  antagonistId   Int
+  organizationId Int
+  position       String?
+
+  antagonist   Antagonist             @relation(fields: [antagonistId], references: [id])
+  organization VillainousOrganization @relation(fields: [organizationId], references: [id])
+
+  @@id([antagonistId, organizationId])
+}
